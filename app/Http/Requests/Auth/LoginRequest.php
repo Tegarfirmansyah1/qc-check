@@ -21,13 +21,11 @@ class LoginRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
      */
     public function rules(): array
     {
         return [
-            'nik' => ['required', 'string'], // Ganti dari 'email' menjadi 'nik'
+            'nik' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -41,12 +39,24 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Ganti kredensial untuk menggunakan 'nik'
+        // Coba otentikasi dengan NIK dan password
         if (! Auth::attempt(['nik' => $this->nik, 'password' => $this->password], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'nik' => trans('auth.failed'), // Tampilkan error pada field 'nik'
+                'nik' => trans('auth.failed'),
+            ]);
+        }
+
+        // PENGECEKAN STATUS PENGGUNA (BAGIAN PENTING)
+        $user = Auth::user();
+        if (!$user->is_active) {
+            // Jika tidak aktif, segera logout lagi
+            Auth::logout();
+            
+            // Lemparkan error validasi dengan pesan khusus
+            throw ValidationException::withMessages([
+                'nik' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.',
             ]);
         }
 

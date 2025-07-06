@@ -59,19 +59,20 @@
             <!-- Main Content -->
             <div class="flex-1 flex flex-col ml-64">
                 <!-- Page Heading -->
-                @if (isset($header))
-                    <header class="bg-white shadow-sm">
-                        <div class="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                            {{ $header }}
-                        </div>
-                    </header>
-                @endif
+                <header class="bg-white shadow-sm">
+                    <div class="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                        {{-- @if (isset($header)) dihapus dari sini --}}
+                        @yield('header')
+                    </div>
+                </header>
 
                 <!-- Page Content -->
                 <main class="flex-grow">
-                    {{ $slot }}
+                    @yield('content')
                 </main>
             </div>
         </div>
+        {{-- Menambahkan stack untuk script jika dibutuhkan per halaman --}}
+        @stack('scripts')
     </body>
 </html>

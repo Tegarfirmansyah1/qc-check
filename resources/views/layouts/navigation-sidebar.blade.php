@@ -19,7 +19,12 @@
         {{ __('Produk') }}
     </x-side-nav-link>
 
-    <x-side-nav-link :href="route('admin.checklist-templates.create')" :active="request()->routeIs('admin.checklist-templates.*')">
+    <x-side-nav-link :href="route('admin.checklist-templates.index')" :active="request()->routeIs('admin.checklist-templates.*')">
         {{ __('Template') }}
     </x-side-nav-link>
+
+    <x-side-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+    {{ __('Pengguna') }}
+</x-side-nav-link>
+
 @endif

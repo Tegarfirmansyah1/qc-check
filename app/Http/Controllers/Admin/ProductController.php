@@ -3,76 +3,76 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Product;
-
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Menampilkan daftar produk.
      */
     public function index()
     {
-        // Ambil semua produk dari database
         $products = Product::latest()->get();
-
-        // Kirim data produk ke view
         return view('admin.products.index', compact('products'));
     }
 
+    /**
+     * Menampilkan form untuk membuat produk baru.
+     */
     public function create()
     {
-        // Method ini hanya bertugas menampilkan view
         return view('admin.products.create');
     }
 
-   
+    /**
+     * Menyimpan produk baru ke database.
+     */
     public function store(Request $request)
     {
-        // 1. Validasi data yang masuk dari form
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
-        // 2. Buat produk baru menggunakan data yang sudah divalidasi
         Product::create($validatedData);
 
-        // 3. Alihkan kembali ke halaman daftar produk dengan pesan sukses
         return redirect()->route('admin.products.index')
                          ->with('success', 'Produk berhasil ditambahkan!');
     }
 
     /**
-     * Display the specified resource.
+     * Menampilkan form untuk mengedit produk.
      */
-    public function show(string $id)
+    public function edit(Product $product)
     {
-        //
+        return view('admin.products.edit', compact('product'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Memperbarui produk di database.
      */
-    public function edit(string $id)
+    public function update(Request $request, Product $product)
     {
-        //
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $product->update($validatedData);
+
+        return redirect()->route('admin.products.index')
+                         ->with('success', 'Produk berhasil diperbarui!');
     }
 
     /**
-     * Update the specified resource in storage.
+     * Menghapus produk dari database.
      */
-    public function update(Request $request, string $id)
+    public function destroy(Product $product)
     {
-        //
-    }
+        $product->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return redirect()->route('admin.products.index')
+                         ->with('success', 'Produk berhasil dihapus!');
     }
 }

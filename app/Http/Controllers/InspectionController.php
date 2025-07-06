@@ -2,19 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use Illuminate\Http\Request;
 use App\Models\Inspection;
 use App\Models\InspectionResult;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class InspectionController extends Controller
 {
-     public function index()
+    // Menggunakan trait agar method $this->authorize() tersedia
+    use AuthorizesRequests;
+
+    // Method __construct() dihapus untuk menghindari error
+
+    /**
+     * Menampilkan daftar inspeksi.
+     */
+    public function index()
     {
+        // Otorisasi manual untuk melihat daftar
+        $this->authorize('viewAny', Inspection::class);
+        
         $query = Inspection::with(['user', 'product'])->latest();
 
-        // Jika yang login adalah staf QC, hanya tampilkan inspeksi miliknya
         if (auth()->user()->role === 'qc_staff') {
             $query->where('user_id', auth()->id());
         }
@@ -23,32 +34,33 @@ class InspectionController extends Controller
 
         return view('inspections.index', compact('inspections'));
     }
+
+    /**
+     * Menampilkan form untuk membuat inspeksi baru.
+     */
     public function create(Request $request)
     {
-        // Ambil semua produk untuk ditampilkan di dropdown
+        // Otorisasi manual untuk membuat
+        $this->authorize('create', Inspection::class);
+
         $products = Product::all();
         $selectedProduct = null;
         
-        // Cek apakah ada request 'product_id' (artinya user sudah memilih produk)
         if ($request->has('product_id')) {
-            // Cari produk yang dipilih, beserta template dan item-itemnya
             $selectedProduct = Product::with('checklistTemplates.items')->find($request->product_id);
         }
 
         return view('inspections.create', compact('products', 'selectedProduct'));
     }
 
-    public function show(Inspection $inspection)
-    {
-        // Gunakan eager loading untuk mengambil semua data terkait secara efisien
-        $inspection->load(['user', 'product', 'results.item']);
-
-        return view('inspections.show', compact('inspection'));
-    }
-
+    /**
+     * Menyimpan inspeksi baru.
+     */
     public function store(Request $request)
     {
-        // 1. Validasi input rekapitulasi dan dasar
+        // Otorisasi manual untuk menyimpan (menggunakan hak 'create')
+        $this->authorize('create', Inspection::class);
+
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity_total' => 'required|integer|min:0',
@@ -57,7 +69,6 @@ class InspectionController extends Controller
             'results' => 'nullable|array',
         ]);
 
-        // 2. Buat record Inspeksi utama dengan data rekapitulasi
         $inspection = Inspection::create([
             'user_id' => Auth::id(),
             'product_id' => $request->product_id,
@@ -67,29 +78,90 @@ class InspectionController extends Controller
             'inspection_date' => now(),
         ]);
 
-        // 3. Loop melalui detail kegagalan dan simpan HANYA JIKA ADA YANG GAGAL
         if ($request->has('results')) {
             foreach ($request->results as $templateItemId => $result) {
-                // Hanya proses dan simpan jika jumlah gagal untuk item ini lebih dari 0
                 if (isset($result['fail_count']) && $result['fail_count'] > 0) {
-                    $photoPath = null;
-                    // Cek jika ada file foto yang di-upload
-                    if (isset($result['photo']) && $result['photo']->isValid()) {
-                        $photoPath = $result['photo']->store('inspection-photos', 'public');
-                    }
-                    
                     InspectionResult::create([
                         'inspection_id' => $inspection->id,
                         'template_item_id' => $templateItemId,
                         'fail_count' => $result['fail_count'],
                         'notes' => $result['notes'] ?? null,
-                        'photo_url' => $photoPath,
                     ]);
                 }
             }
         }
 
-        // 4. Redirect ke halaman riwayat dengan pesan sukses
         return redirect()->route('inspections.index')->with('success', 'Laporan inspeksi batch berhasil disimpan!');
+    }
+
+    /**
+     * Menampilkan detail satu inspeksi.
+     */
+    public function show(Inspection $inspection)
+    {
+        // Otorisasi manual untuk melihat detail
+        $this->authorize('view', $inspection);
+        
+        $inspection->load(['user', 'product', 'results.item']);
+        return view('inspections.show', compact('inspection'));
+    }
+
+    /**
+     * Menampilkan form untuk mengedit inspeksi.
+     */
+    public function edit(Inspection $inspection)
+    {
+        // Otorisasi manual untuk menampilkan form edit
+        $this->authorize('update', $inspection);
+
+        $inspection->load('product.checklistTemplates.items', 'results');
+        return view('inspections.edit', compact('inspection'));
+    }
+
+    /**
+     * Memperbarui data inspeksi di database.
+     */
+    public function update(Request $request, Inspection $inspection)
+    {
+        // Otorisasi manual untuk memproses update
+        $this->authorize('update', $inspection);
+
+        $validatedData = $request->validate([
+            'quantity_total' => 'required|integer|min:0',
+            'quantity_pass' => 'required|integer|min:0',
+            'quantity_fail' => 'required|integer|min:0',
+            'results' => 'nullable|array',
+        ]);
+
+        $inspection->update($validatedData);
+
+        $inspection->results()->delete();
+
+        if ($request->has('results')) {
+            foreach ($request->results as $templateItemId => $result) {
+                if (isset($result['fail_count']) && $result['fail_count'] > 0) {
+                    InspectionResult::create([
+                        'inspection_id' => $inspection->id,
+                        'template_item_id' => $templateItemId,
+                        'fail_count' => $result['fail_count'],
+                        'notes' => $result['notes'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('inspections.show', $inspection)->with('success', 'Inspeksi berhasil diperbarui!');
+    }
+
+    /**
+     * Menghapus data inspeksi.
+     */
+    public function destroy(Inspection $inspection)
+    {
+        // Otorisasi manual untuk menghapus
+        $this->authorize('delete', $inspection);
+
+        $inspection->delete();
+        return redirect()->route('inspections.index')->with('success', 'Inspeksi berhasil dihapus!');
     }
 }

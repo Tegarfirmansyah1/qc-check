@@ -2,7 +2,7 @@
 
 @section('header')
     <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        {{ __('Buat Template Checklist Baru') }}
+        {{ __('Edit Template: ') }} {{ $checklistTemplate->title }}
     </h2>
 @endsection
 
@@ -11,36 +11,36 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
-                <form method="POST" action="{{ route('admin.checklist-templates.store') }}">
+                <form method="POST" action="{{ route('admin.checklist-templates.update', $checklistTemplate) }}">
                     @csrf
+                    @method('PUT')
                     
                     <!-- Judul Template -->
                     <div class="mb-4">
                         <label for="title" class="block text-sm font-medium text-gray-700">Judul Template</label>
-                        <input type="text" name="title" id="title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                        @error('title')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <input type="text" name="title" id="title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="{{ old('title', $checklistTemplate->title) }}" required>
                     </div>
 
                     <!-- Pilih Produk -->
                     <div class="mb-6">
                         <label for="product_id" class="block text-sm font-medium text-gray-700">Untuk Produk</label>
-                        <select name="product_id" id="product_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        <select name="product_id" id="product_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                             <option value="">-- Pilih Produk --</option>
                             @foreach ($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }}</option>
+                                <option value="{{ $product->id }}" @selected(old('product_id', $checklistTemplate->product_id) == $product->id)>
+                                    {{ $product->name }}
+                                </option>
                             @endforeach
                         </select>
-                        @error('product_id')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     
                     <div class="flex items-center gap-4">
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                            Simpan & Lanjut Tambah Item
+                            Simpan Perubahan
                         </button>
+                        <a href="{{ route('admin.checklist-templates.index') }}" class="text-sm text-gray-600 hover:text-gray-900 underline">
+                            Batal
+                        </a>
                     </div>
                 </form>
             </div>
