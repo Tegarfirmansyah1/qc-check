@@ -30,7 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('inspections/{inspection}/edit', [InspectionController::class, 'edit'])->name('inspections.edit');
     Route::put('inspections/{inspection}', [InspectionController::class, 'update'])->name('inspections.update');
     Route::delete('inspections/{inspection}', [InspectionController::class, 'destroy'])->name('inspections.destroy');
+     Route::get('/inspections/{inspection}/download', [InspectionController::class, 'downloadPDF'])->name('inspections.download');
     Route::post('/inspections', [InspectionController::class, 'store'])->name('inspections.store');
+    Route::get('/inspections/{inspection}/export-excel', [InspectionController::class, 'exportExcel'])->name('inspections.export-excel');
     // (Nantinya kita akan tambah route untuk riwayat di sini)
     // routes/web.php di dalam grup middleware 'auth'
 });

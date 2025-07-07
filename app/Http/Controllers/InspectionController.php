@@ -8,20 +8,22 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Rules\SumEqualsTotal;
+use App\Rules\SumOfResultsEqualsFail;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\InspectionExport;
 
 class InspectionController extends Controller
 {
     // Menggunakan trait agar method $this->authorize() tersedia
     use AuthorizesRequests;
 
-    // Method __construct() dihapus untuk menghindari error
-
     /**
-     * Menampilkan daftar inspeksi.
+     * Menampilkan daftar inspeksi dengan fitur pencarian dan filter.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Otorisasi manual untuk melihat daftar
         $this->authorize('viewAny', Inspection::class);
         
         $query = Inspection::with(['user', 'product'])->latest();
@@ -30,9 +32,31 @@ class InspectionController extends Controller
             $query->where('user_id', auth()->id());
         }
 
-        $inspections = $query->get();
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->whereHas('product', function($subq) use ($search) {
+                    $subq->where('name', 'like', "%{$search}%");
+                })->orWhereHas('user', function($subq) use ($search) {
+                    $subq->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
 
-        return view('inspections.index', compact('inspections'));
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+            $query->whereBetween('inspection_date', [$startDate, $endDate]);
+        }
+
+        $inspections = $query->paginate(15)->withQueryString();
+
+        return view('inspections.index', [
+            'inspections' => $inspections,
+            'search' => $request->input('search'),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
+        ]);
     }
 
     /**
@@ -40,7 +64,6 @@ class InspectionController extends Controller
      */
     public function create(Request $request)
     {
-        // Otorisasi manual untuk membuat
         $this->authorize('create', Inspection::class);
 
         $products = Product::all();
@@ -58,15 +81,14 @@ class InspectionController extends Controller
      */
     public function store(Request $request)
     {
-        // Otorisasi manual untuk menyimpan (menggunakan hak 'create')
         $this->authorize('create', Inspection::class);
 
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity_total' => 'required|integer|min:0',
-            'quantity_pass' => 'required|integer|min:0',
-            'quantity_fail' => 'required|integer|min:0',
-            'results' => 'nullable|array',
+            'quantity_total' => ['required', 'integer', 'min:0'],
+            'quantity_pass' => ['required', 'integer', 'min:0'],
+            'quantity_fail' => ['required', 'integer', 'min:0', new SumEqualsTotal($request)],
+            'results' => ['nullable', 'array', new SumOfResultsEqualsFail($request)],
         ]);
 
         $inspection = Inspection::create([
@@ -99,7 +121,6 @@ class InspectionController extends Controller
      */
     public function show(Inspection $inspection)
     {
-        // Otorisasi manual untuk melihat detail
         $this->authorize('view', $inspection);
         
         $inspection->load(['user', 'product', 'results.item']);
@@ -111,7 +132,6 @@ class InspectionController extends Controller
      */
     public function edit(Inspection $inspection)
     {
-        // Otorisasi manual untuk menampilkan form edit
         $this->authorize('update', $inspection);
 
         $inspection->load('product.checklistTemplates.items', 'results');
@@ -123,14 +143,13 @@ class InspectionController extends Controller
      */
     public function update(Request $request, Inspection $inspection)
     {
-        // Otorisasi manual untuk memproses update
         $this->authorize('update', $inspection);
 
         $validatedData = $request->validate([
-            'quantity_total' => 'required|integer|min:0',
-            'quantity_pass' => 'required|integer|min:0',
-            'quantity_fail' => 'required|integer|min:0',
-            'results' => 'nullable|array',
+            'quantity_total' => ['required', 'integer', 'min:0'],
+            'quantity_pass' => ['required', 'integer', 'min:0'],
+            'quantity_fail' => ['required', 'integer', 'min:0', new SumEqualsTotal($request)],
+            'results' => ['nullable', 'array', new SumOfResultsEqualsFail($request)],
         ]);
 
         $inspection->update($validatedData);
@@ -158,10 +177,34 @@ class InspectionController extends Controller
      */
     public function destroy(Inspection $inspection)
     {
-        // Otorisasi manual untuk menghapus
         $this->authorize('delete', $inspection);
 
         $inspection->delete();
         return redirect()->route('inspections.index')->with('success', 'Inspeksi berhasil dihapus!');
+    }
+
+    /**
+     * Membuat dan mengunduh laporan inspeksi dalam format PDF.
+     */
+    public function downloadPDF(Inspection $inspection)
+    {
+        $this->authorize('view', $inspection);
+
+        $inspection->load(['user', 'product', 'results.item']);
+        $pdf = Pdf::loadView('inspections.pdf', compact('inspection'));
+        $fileName = 'Laporan-Inspeksi-' . $inspection->id . '-' . $inspection->product->name . '.pdf';
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Membuat dan mengunduh laporan inspeksi dalam format Excel.
+     */
+    public function exportExcel(Inspection $inspection)
+    {
+        $this->authorize('view', $inspection);
+
+        $fileName = 'Laporan-Inspeksi-' . $inspection->id . '-' . str_replace(' ', '-', $inspection->product->name) . '.xlsx';
+
+        return Excel::download(new InspectionExport($inspection), $fileName);
     }
 }

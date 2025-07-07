@@ -9,7 +9,7 @@
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        {{-- Bagian 1: Pemilihan Produk --}}
+        {{-- ... (form pemilihan produk) ... --}}
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6 text-gray-900">
                 <h3 class="text-lg font-medium mb-4">Langkah 1: Pilih Produk</h3>
@@ -19,7 +19,7 @@
                             <select name="product_id" id="product_id" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">-- Pilih Produk --</option>
                                 @foreach ($products as $product)
-                                    <option value="{{ $product->id }}" {{ $selectedProduct && $selectedProduct->id == $product->id ? 'selected' : '' }}>
+                                    <option value="{{ $product->id }}" {{ old('product_id', $selectedProduct->id ?? '') == $product->id ? 'selected' : '' }}>
                                         {{ $product->name }}
                                     </option>
                                 @endforeach
@@ -33,7 +33,6 @@
             </div>
         </div>
 
-        {{-- Bagian 2: Form Inspeksi Batch --}}
         @if ($selectedProduct && $selectedProduct->checklistTemplates->isNotEmpty())
             @php
                 $template = $selectedProduct->checklistTemplates->first();
@@ -46,23 +45,32 @@
                     <div class="p-6 text-gray-900">
                         <h3 class="text-lg font-medium mb-4">Langkah 2: Isi Detail Inspeksi untuk "{{ $selectedProduct->name }}"</h3>
 
-                        {{-- REKAPITULASI BATCH --}}
+                        @if ($errors->any())
+                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                                <p class="font-bold">Terjadi Kesalahan</p>
+                                <ul class="list-disc list-inside">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-4 border rounded-lg">
                             <div>
                                 <label for="quantity_total" class="block text-sm font-medium text-gray-700">Jumlah Total Diperiksa</label>
-                                <input type="number" name="quantity_total" id="quantity_total" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <input type="number" name="quantity_total" id="quantity_total" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="{{ old('quantity_total') }}" required>
                             </div>
                             <div>
                                 <label for="quantity_pass" class="block text-sm font-medium text-gray-700">Jumlah Lulus (Pass)</label>
-                                <input type="number" name="quantity_pass" id="quantity_pass" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <input type="number" name="quantity_pass" id="quantity_pass" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="{{ old('quantity_pass') }}" required>
                             </div>
                             <div>
                                 <label for="quantity_fail" class="block text-sm font-medium text-gray-700">Jumlah Gagal (Fail)</label>
-                                <input type="number" name="quantity_fail" id="quantity_fail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <input type="number" name="quantity_fail" id="quantity_fail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="{{ old('quantity_fail') }}" required>
                             </div>
                         </div>
 
-                        {{-- LOG ALASAN KEGAGALAN --}}
                         <h3 class="text-lg font-medium mb-4">Langkah 3: Catat Detail Kegagalan (Jika Ada)</h3>
                         <div class="space-y-6">
                             @foreach ($template->items as $item)
@@ -71,11 +79,11 @@
                                     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div>
                                             <label for="fail-count-{{ $item->id }}" class="block text-sm font-medium text-gray-700">Jumlah Gagal Karena Ini:</label>
-                                            <input type="number" name="results[{{ $item->id }}][fail_count]" id="fail-count-{{ $item->id }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="0">
+                                            <input type="number" name="results[{{ $item->id }}][fail_count]" id="fail-count-{{ $item->id }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="0" value="{{ old('results.'.$item->id.'.fail_count') }}">
                                         </div>
                                         <div class="col-span-2">
                                             <label for="notes-{{ $item->id }}" class="block text-sm font-medium text-gray-700">Catatan:</label>
-                                            <input type="text" name="results[{{ $item->id }}][notes]" id="notes-{{ $item->id }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                            <input type="text" name="results[{{ $item->id }}][notes]" id="notes-{{ $item->id }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="{{ old('results.'.$item->id.'.notes') }}">
                                         </div>
                                     </div>
                                     <div class="mt-4">
@@ -93,12 +101,6 @@
                         </div>
                     </div>
                 </form>
-            </div>
-        @elseif($selectedProduct)
-             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <p class="text-center text-gray-500">Produk ini belum memiliki template checklist.</p>
-                </div>
             </div>
         @endif
     </div>

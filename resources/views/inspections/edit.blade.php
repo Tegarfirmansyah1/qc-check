@@ -10,7 +10,6 @@
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            {{-- 👇 PERBAIKI ACTION FORM INI --}}
             <form method="POST" action="{{ route('inspections.update', $inspection) }}">
                 @csrf
                 @method('PUT')
@@ -19,6 +18,18 @@
                     <h3 class="text-lg font-medium mb-4">
                         Mengedit Inspeksi untuk Produk: <span class="font-bold text-blue-600">{{ $inspection->product->name }}</span>
                     </h3>
+
+                    {{-- 👇 TAMBAHKAN BLOK PERINGATAN VALIDASI DI SINI --}}
+                    @if ($errors->any())
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                            <p class="font-bold">Terjadi Kesalahan</p>
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
                     {{-- REKAPITULASI BATCH --}}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-4 border rounded-lg">

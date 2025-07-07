@@ -6,8 +6,17 @@
             {{ __('Detail Inspeksi #') }}{{ $inspection->id }}
         </h2>
         
-        {{-- Tombol Aksi, ditampilkan berdasarkan hak akses dari Policy --}}
         <div class="flex items-center space-x-2">
+            {{-- Tombol Export Excel --}}
+            <a href="{{ route('inspections.export-excel', $inspection) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                Export Excel
+            </a>
+
+            {{-- Tombol Unduh PDF --}}
+            <a href="{{ route('inspections.download', $inspection) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                Unduh PDF
+            </a>
+
             @can('update', $inspection)
                 <a href="{{ route('inspections.edit', $inspection) }}" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600">
                     Edit
@@ -27,6 +36,7 @@
 @endsection
 
 @section('content')
+    {{-- Isi content biarkan seperti semula --}}
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
         
