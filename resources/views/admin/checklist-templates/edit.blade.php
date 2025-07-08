@@ -38,7 +38,7 @@
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                             Simpan Perubahan
                         </button>
-                        <a href="{{ route('admin.checklist-templates.index') }}" class="text-sm text-gray-600 hover:text-gray-900 underline">
+                        <a href="{{ route('admin.checklist-templates.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 border border-gray-600 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
                             Batal
                         </a>
                     </div>

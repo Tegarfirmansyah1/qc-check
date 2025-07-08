@@ -19,7 +19,6 @@
                         Mengedit Inspeksi untuk Produk: <span class="font-bold text-blue-600">{{ $inspection->product->name }}</span>
                     </h3>
 
-                    {{-- 👇 TAMBAHKAN BLOK PERINGATAN VALIDASI DI SINI --}}
                     @if ($errors->any())
                         <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
                             <p class="font-bold">Terjadi Kesalahan</p>
@@ -78,7 +77,8 @@
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
                             Simpan Perubahan
                         </button>
-                        <a href="{{ route('inspections.show', $inspection) }}" class="text-sm text-gray-600 hover:text-gray-900 underline">
+                        {{-- 👇 PERBAIKI TOMBOL BATAL DI SINI --}}
+                        <a href="{{ route('inspections.show', $inspection) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 border border-gray-600 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
                             Batal
                         </a>
                     </div>

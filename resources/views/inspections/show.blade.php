@@ -1,22 +1,18 @@
 @extends('layouts.app')
 
 @section('header')
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center w-full"> {{-- Tambahkan w-full --}}
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Detail Inspeksi #') }}{{ $inspection->id }}
         </h2>
         
-        <div class="flex items-center space-x-2">
-            {{-- Tombol Export Excel --}}
+        <div class="flex items-center space-x-2 mr-12">
             <a href="{{ route('inspections.export-excel', $inspection) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
                 Export Excel
             </a>
-
-            {{-- Tombol Unduh PDF --}}
             <a href="{{ route('inspections.download', $inspection) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
                 Unduh PDF
             </a>
-
             @can('update', $inspection)
                 <a href="{{ route('inspections.edit', $inspection) }}" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600">
                     Edit
